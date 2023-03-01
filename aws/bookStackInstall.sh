@@ -81,14 +81,7 @@ function run_prompt_for_domain_if_required() {
 function run_package_installs() {
   apt update
   apt install -y git unzip nginx php8.1 curl php8.1-curl php8.1-mbstring php8.1-ldap \
-  php8.1-xml php8.1-zip php8.1-gd php8.1-mysql mysql-client-8.0 libapache2-mod-php8.1 php8.1-fpm 
-}
-
-# Set up database
-function run_database_setup() {
-  mysql --host=assign2-db.cs8n4x2x2tx2.us-west-2.rds.amazonaws.com --port=3306 --user=bookmaster --password=Stacker123 --execute="CREATE USER 'bookstack'@'%' IDENTIFIED WITH mysql_native_password BY '$DB_PASS';"
-  mysql --host=assign2-db.cs8n4x2x2tx2.us-west-2.rds.amazonaws.com --port=3306 --user=bookmaster --password=Stacker123 ---execute="GRANT ALL ON bookstack.* TO 'bookstack'@'%';FLUSH PRIVILEGES;"
-
+  php8.1-xml php8.1-zip php8.1-gd php8.1-mysql mysql-client-8.0 php8.1-fpm 
 }
 
 # Download BookStack
@@ -130,10 +123,10 @@ function run_update_bookstack_env() {
   cd "$BOOKSTACK_DIR" || exit
   cp .env.example .env
   sed -i.bak "s@APP_URL=.*\$@APP_URL=http://$DOMAIN@" .env
-  sed -i.bak 's/DB_DATABASE=.*$/DB_HOST=assign2-db.cs8n4x2x2tx2.us-west-2.rds.amazonaws.com' .env
   sed -i.bak 's/DB_DATABASE=.*$/DB_DATABASE=bookstack/' .env
-  sed -i.bak 's/DB_USERNAME=.*$/DB_USERNAME=bookstack/' .env
+  sed -i.bak 's/DB_USERNAME=.*$/DB_USERNAME=bookmaster/' .env
   sed -i.bak "s/DB_PASSWORD=.*\$/DB_PASSWORD=$DB_PASS/" .env
+  sed -i '/DB_HOST=localhost/c\DB_HOST=assign2-db.cs8n4x2x2tx2.us-west-2.rds.amazonaws.com' .env
   # Generate the application key
   php artisan key:generate --no-interaction --force
 }
@@ -176,7 +169,7 @@ server {
   location / {
     try_files $uri $uri/ /index.php?$query_string;
   }
-  
+
   location ~ \.php$ {
     include snippets/fastcgi-php.conf;
     fastcgi_pass unix:/run/php/php8.1-fpm.sock;
@@ -185,6 +178,7 @@ server {
 EOL
   # Restart apache to load new config
   rm /etc/nginx/sites-enabled/default
+  rm /etc/nginx/sites-available/default
   ln -s /etc/nginx/sites-available/bookstack.conf /etc/nginx/sites-enabled/bookstack.conf
   systemctl restart nginx
 }
@@ -201,8 +195,6 @@ sleep 1
 info_msg "[1/9] Installing required system packages... (This may take several minutes)"
 run_package_installs >> "$LOGPATH" 2>&1
 
-info_msg "[2/9] Preparing MySQL database..."
-run_database_setup >> "$LOGPATH" 2>&1
 
 info_msg "[3/9] Downloading BookStack to ${BOOKSTACK_DIR}..."
 run_bookstack_download >> "$LOGPATH" 2>&1
