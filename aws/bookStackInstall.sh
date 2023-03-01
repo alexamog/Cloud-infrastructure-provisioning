@@ -46,7 +46,7 @@ function run_pre_install_checks() {
     error_out "This script must be ran with root/sudo privileges"
   fi
 
-  # Check if Apache appears to be installed and exit if so
+  # Check if NGINX appears to be installed and exit if so
   if [ -d "/etc/nginx/sites-enabled" ]
   then
     error_out "This script is intended for a fresh server install, existing nginx config found, aborting install"
@@ -152,11 +152,11 @@ function run_set_application_file_permissions() {
   git config core.fileMode false
 }
 
-# Setup apache with the needed modules and config
+# Setup nginx with the needed modules and config
 function run_configure_nginx() {
 
-  # Set-up the required BookStack apache config
-  cat >/etc/nginx/sites-available/bookstack.conf <<EOL
+  # Set-up the required BookStack nginx config
+  cat << EOF > /etc/nginx/sites-available/bookstack.conf
 server {
   listen 80;
   listen [::]:80;
@@ -167,7 +167,7 @@ server {
   index index.php index.html;
 
   location / {
-    try_files $uri $uri/ /index.php?$query_string;
+    try_files \$uri \$uri/ /index.php?\$query_string;
   }
 
   location ~ \.php$ {
@@ -175,11 +175,13 @@ server {
     fastcgi_pass unix:/run/php/php8.1-fpm.sock;
   }
 }
-EOL
+EOF
+
   # Restart apache to load new config
-  rm /etc/nginx/sites-enabled/default
   rm /etc/nginx/sites-available/default
+  rm /etc/nginx/sites-enabled/default 
   ln -s /etc/nginx/sites-available/bookstack.conf /etc/nginx/sites-enabled/bookstack.conf
+  pkill -f nginx & wait $!
   systemctl restart nginx
 }
 
@@ -192,29 +194,29 @@ info_msg ""
 info_msg "Installing using the domain or IP \"$DOMAIN\""
 info_msg ""
 sleep 1
-info_msg "[1/9] Installing required system packages... (This may take several minutes)"
+info_msg "[1/8] Installing required system packages... (This may take several minutes)"
 run_package_installs >> "$LOGPATH" 2>&1
 
 
-info_msg "[3/9] Downloading BookStack to ${BOOKSTACK_DIR}..."
+info_msg "[2/8] Downloading BookStack to ${BOOKSTACK_DIR}..."
 run_bookstack_download >> "$LOGPATH" 2>&1
 
-info_msg "[4/9] Installing Composer (PHP dependency manager)..."
+info_msg "[3/8] Installing Composer (PHP dependency manager)..."
 run_install_composer >> "$LOGPATH" 2>&1
 
-info_msg "[5/9] Installing PHP dependencies using composer..."
+info_msg "[4/8] Installing PHP dependencies using composer..."
 run_install_bookstack_composer_deps >> "$LOGPATH" 2>&1
 
-info_msg "[6/9] Creating and populating BookStack .env file..."
+info_msg "[5/8] Creating and populating BookStack .env file..."
 run_update_bookstack_env >> "$LOGPATH" 2>&1
 
-info_msg "[7/9] Running initial BookStack database migrations..."
+info_msg "[6/8] Running initial BookStack database migrations..."
 run_bookstack_database_migrations >> "$LOGPATH" 2>&1
 
-info_msg "[8/9] Setting BookStack file & folder permissions..."
+info_msg "[7/8] Setting BookStack file & folder permissions..."
 run_set_application_file_permissions >> "$LOGPATH" 2>&1
 
-info_msg "[9/9] Configuring nginx server..."
+info_msg "[8/8] Configuring nginx server..."
 run_configure_nginx >> "$LOGPATH" 2>&1
 
 info_msg "----------------------------------------------------------------"
