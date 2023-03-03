@@ -169,8 +169,16 @@ rds_instance_id=$(aws rds create-db-instance \
     --vpc-security-group-ids "$rds_security_group_id" \
     --db-subnet-group-name $db_subnet_group_name \
     --publicly-accessible \
-    --query DBInstance.Address \
+    --query DBInstance.DBInstanceIdentifier \
     --output text
 )
+echo "Waiting for RDS to setup...."
+aws rds wait db-instance-available --db-instance-identifier "$rds_instance_id"
 
-echo "RDS ID $rds_instance_id"
+echo "=================================================================================================="
+aws ec2 describe-instances --filters Name=vpc-id,Values="$vpc_id" --output table --no-cli-pager
+aws ec2 describe-route-tables --filters Name=vpc-id,Values="$vpc_id" --output table --no-cli-pager
+aws ec2 describe-internet-gateways --filters Name=attachment.vpc-id,Values="$vpc_id" --output table --no-cli-pager
+aws ec2 describe-subnets --filters Name=vpc-id,Values="$vpc_id" --output table --no-cli-pager
+aws ec2 describe-security-groups --filters Name=vpc-id,Values="$vpc_id" --output table --no-cli-pager
+aws ec2 describe-vpcs --vpc-id "$vpc_id" --output table --no-cli-pager
