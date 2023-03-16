@@ -1,0 +1,9 @@
+---
+- name: Install nginx
+  hosts: aws_ec2
+  become: True
+  tasks:
+    - name: install the nginx package
+      package:
+        name: nginx
+        state: present
