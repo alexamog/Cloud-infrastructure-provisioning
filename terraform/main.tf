@@ -170,7 +170,34 @@ resource "aws_instance" "ec2-instance" {
   }
 }
 
-resource "aws_eip" "lb" {
+resource "aws_eip" "eip" {
   instance = aws_instance.ec2-instance.id
   vpc      = true
+}
+
+resource "aws_db_subnet_group" "db_subnet_group" {
+  name       = "rds_subnet_group"
+  subnet_ids = [aws_subnet.acit_rds_subnet1.id, aws_subnet.acit_rds_subnet2.id]
+
+  tags = {
+    Name = "RDS subnet group"
+  }
+}
+
+resource "aws_db_instance" "db_instance" {
+  allocated_storage      = 5
+  db_subnet_group_name   = aws_db_subnet_group.db_subnet_group.name
+  vpc_security_group_ids = ["${aws_security_group.acit_sg_rds.id}"]
+  db_name                = "bookstack"
+  engine                 = "mysql"
+  engine_version         = "8.0"
+  instance_class         = "db.t2.micro"
+  username               = "bookmaster"
+  password               = "Stacker123!"
+  parameter_group_name   = "default.mysql8.0"
+  skip_final_snapshot    = true
+
+  tags = {
+    Name = "acit-4640-rds"
+  }
 }
