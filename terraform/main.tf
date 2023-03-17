@@ -137,7 +137,7 @@ resource "aws_security_group" "acit_sg_rds" {
 
 }
 
-resource "aws_key_pair" "assign3-keypair" {
+resource "aws_key_pair" "assign3-key" {
   key_name   = "assign3-key"
   public_key = file("~/.ssh/id_rsa.pub")
 }
@@ -147,7 +147,7 @@ data "aws_ami" "ubuntu" {
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
   }
 
   filter {
@@ -158,12 +158,19 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
-resource "aws_instance" "web" {
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = "t2.micro"
-  key_name      = "assign3-key"
+resource "aws_instance" "ec2-instance" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = "t2.micro"
+  key_name               = "assign3-key"
+  vpc_security_group_ids = ["${aws_security_group.acit_sg_ec2.id}"]
+  subnet_id              = aws_subnet.acit_pub_subnet.id
 
   tags = {
-    Name = "assign3-instance"
+    Name = "acit-4640-ec2"
   }
+}
+
+resource "aws_eip" "lb" {
+  instance = aws_instance.ec2-instance.id
+  vpc      = true
 }
