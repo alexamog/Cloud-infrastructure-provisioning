@@ -1,4 +1,14 @@
 ---
+- name: Update and upgrade package manager
+  hosts: aws_ec2
+  become: True
+  tasks:
+    - name: Update and upgrade package manager
+      apt:
+        upgrade: yes
+        update_cache: yes
+
+        
 - name: Install nginx
   hosts: aws_ec2
   become: True

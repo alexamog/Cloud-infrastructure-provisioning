@@ -175,6 +175,12 @@ resource "aws_eip" "eip" {
   vpc      = true
 }
 
+output "eip_eip" {
+  description = "Elastic ip address for EC2 instance"
+  value       = aws_eip.eip.*.public_ip
+}
+
+
 resource "aws_db_subnet_group" "db_subnet_group" {
   name       = "rds_subnet_group"
   subnet_ids = [aws_subnet.acit_rds_subnet1.id, aws_subnet.acit_rds_subnet2.id]
