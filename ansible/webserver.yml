@@ -1,19 +1,15 @@
----
-- name: Update and upgrade package manager
+- name: Install NGINX
   hosts: aws_ec2
-  become: True
+  become: true
   tasks:
-    - name: Update and upgrade package manager
+    - name: Upgrade package manager
       apt:
         upgrade: yes
-        update_cache: yes
+    - name: Update package manager
+      shell: apt update --fix-missing
 
-        
-- name: Install nginx
-  hosts: aws_ec2
-  become: True
-  tasks:
-    - name: install the nginx package
-      package:
+
+    - name: Install nginx
+      apt:
         name: nginx
         state: present

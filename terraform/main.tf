@@ -32,7 +32,8 @@ variable "vpc_cidr" {
 
 #VPC
 resource "aws_vpc" "acit_vpc" {
-  cidr_block = var.vpc_cidr
+  cidr_block           = var.vpc_cidr
+  enable_dns_hostnames = true
   tags = {
     Name = "acit-4640-vpc"
   }
@@ -121,6 +122,13 @@ resource "aws_security_group" "acit_sg_ec2" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   tags = {
     Name = "acit-4640-sg-ec2"
   }
