@@ -1,15 +1,30 @@
+
+
 terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 4.16"
     }
+    dotenv = {
+      source  = "jrhouston/dotenv"
+      version = "~> 1.0"
+    }
   }
   required_version = ">= 1.2.0"
 }
 
+
+data "dotenv" "config" {
+  # NOTE there must be a file called `dev.env` in the same directory as the .tf config
+  filename = ".env"
+}
+
 provider "aws" {
-  region = "us-west-2"
+  region     = "us-west-2"
+  access_key = data.dotenv.config.env.AWS_ACCESS_KEY_ID
+  secret_key = data.dotenv.config.env.AWS_SECRET_ACCESS_KEY
+
 }
 
 variable "vpc_cidr" {
