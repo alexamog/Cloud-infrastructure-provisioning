@@ -14,7 +14,7 @@ terraform {
 
 
 data "dotenv" "config" {
-  # NOTE there must be a file called `dev.env` in the same directory as the .tf config
+  # NOTE there must be a file called `.env` in the same directory as the .tf config
   filename = ".env"
 }
 
@@ -212,6 +212,7 @@ resource "aws_db_subnet_group" "db_subnet_group" {
 }
 
 resource "aws_db_instance" "db_instance" {
+  identifier             = "acit-4640-rds"
   allocated_storage      = 5
   db_subnet_group_name   = aws_db_subnet_group.db_subnet_group.name
   vpc_security_group_ids = ["${aws_security_group.acit_sg_rds.id}"]
@@ -223,8 +224,4 @@ resource "aws_db_instance" "db_instance" {
   password               = "Stacker123!"
   parameter_group_name   = "default.mysql8.0"
   skip_final_snapshot    = true
-
-  tags = {
-    Name = "acit-4640-rds"
-  }
 }
