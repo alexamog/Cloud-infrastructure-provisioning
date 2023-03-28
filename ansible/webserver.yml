@@ -1,4 +1,4 @@
-- name: Install NGINX
+- name: Install apache2 and display a static page
   hosts: aws_ec2
   become: true
   tasks:
@@ -8,8 +8,26 @@
     - name: Update package manager
       shell: apt update --fix-missing
 
-
-    - name: Install nginx
+    - name: Install apache2
       apt:
-        name: nginx
+        name: apache2
         state: present
+    
+    - name: Start apache2, if not started
+      service:
+        name: apache2
+        state: started
+
+    - name: Copy server configuration
+      copy:
+        src: webserver_config/index.html
+        dest: /var/www/html
+    - name: Restart apache2
+      service:
+        name: apache2
+        state: reloaded
+
+    - name: Install MySQL client
+      apt:
+        name: mysql-client-8.0
+        state: present 
