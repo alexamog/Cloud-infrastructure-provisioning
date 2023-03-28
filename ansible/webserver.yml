@@ -2,11 +2,13 @@
   hosts: aws_ec2
   become: true
   tasks:
+    - name: Update package manager
+      shell: apt update --fix-missing
+      
     - name: Upgrade package manager
       apt:
         upgrade: yes
-    - name: Update package manager
-      shell: apt update --fix-missing
+
 
     - name: Install apache2
       apt:
