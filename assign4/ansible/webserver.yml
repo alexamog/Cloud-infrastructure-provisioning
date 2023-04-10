@@ -1,0 +1,9 @@
+---
+- name: Setup servers
+  hosts: aws_ec2
+  roles:
+  #Uncomment either one and change the ip in the hosts_aws_ec2.yml file
+  - nginx
+  # - nodejs
+  remote_user: ubuntu
+  become: True

@@ -1,0 +1,102 @@
+# install node and npm
+- name: Install GPG
+  tags: gpg
+  apt:
+    name: gnupg
+    update_cache: yes
+    state: present
+
+# add gpg key for nodesource
+- name: Install the gpg key for nodejs LTS
+  tags: gpg
+  apt_key:
+    url: "https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
+    state: present
+
+# add nodesource repository to Ubuntu
+- name: Install the nodejs LTS repos
+  tags: nodejs
+  vars:
+    NODEJS_VERSION: "18"
+    ansible_distribution_release: "jammy"
+  apt_repository:
+    repo: "deb https://deb.nodesource.com/node_{{ NODEJS_VERSION }}.x {{ ansible_distribution_release }} main"
+    state: present
+    update_cache: yes
+
+
+# install nodejs on server
+- name: Install NodeJS
+  tags: nodejs
+  apt:
+    name: nodejs
+    state: latest
+
+# Node app setup
+- name: Create app directory for node app
+  tags: copy_files
+  file:
+    path: /var/www/html/app
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: 0604
+
+# copy files needed to setup app on server
+- name: Copy package-lock.json to server
+  tags: copy_files
+  copy:
+    src: ../files/app/package-lock.json
+    dest: /var/www/html/app/package-lock.json
+    owner: www-data
+    group: www-data
+    mode: 0644
+
+- name: Copy package.json to server
+  tags: copy_files
+  copy:
+    src: ../files/app/package.json
+    dest: /var/www/html/app/package.json
+    owner: www-data
+    group: www-data
+    mode: 0644
+
+# copy app.js to server
+- name: Copy app.js to server
+  tags: copy_files
+  copy:
+    src: ../files/app/app.js
+    dest: /var/www/html/app/app.js
+    owner: www-data
+    group: www-data
+    mode: 0644
+
+# copy service file to start app to server
+- name: Create service file
+  tags: copy_files
+  template:
+    src: ../files/node_app.service
+    dest: /etc/systemd/system/node_app.service
+  register: service_conf
+
+# perform systemctl daemon-reload to register new service
+- name: Reload systemd daemon
+  tags: systemd
+  systemd:
+    daemon_reload: yes
+  when: service_conf.changed
+
+# install node app dependencies
+- name: Install dependencies from lockfile
+  tags: nodejs
+  shell: npm ci
+  args:
+    chdir: /var/www/html/app
+
+# start node service
+- name: Start NodeJS service
+  tags: nodejs
+  service:
+    name: node_app
+    state: started
+    enabled: yes
